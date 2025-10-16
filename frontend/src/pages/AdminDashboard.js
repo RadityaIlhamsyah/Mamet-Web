@@ -1,4 +1,3 @@
-// AdminDashboard.js - FIXED VERSION with Working Status Update
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -6,8 +5,14 @@ import io from 'socket.io-client';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Coffee, LogOut, Menu as MenuIcon, TrendingUp, ShoppingBag } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import { Coffee, LogOut, Menu as MenuIcon, TrendingUp, ShoppingBag, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -21,15 +26,6 @@ const statusConfig = {
   cancelled: { label: 'Dibatalkan', color: 'bg-red-100 text-red-800 border-red-300' },
 };
 
-const formatRupiah = (angka) => {
-  if (angka == null) return '-';
-  return angka.toLocaleString('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  });
-};
-
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
@@ -37,7 +33,6 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [socket, setSocket] = useState(null);
   const [qrCode, setQrCode] = useState('');
-  const [updatingStatus, setUpdatingStatus] = useState({}); // Track which order is being updated
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
@@ -50,6 +45,7 @@ const AdminDashboard = () => {
     fetchAnalytics();
     fetchQRCode();
 
+    // Connect to Socket.IO
     const newSocket = io(BACKEND_URL, {
       transports: ['websocket', 'polling'],
     });
@@ -72,12 +68,19 @@ const AdminDashboard = () => {
     });
 
     setSocket(newSocket);
-    return () => newSocket.disconnect();
+
+    return () => {
+      newSocket.disconnect();
+    };
   }, [navigate]);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('admin_token');
-    return { headers: { Authorization: `Bearer ${token}` } };
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
   };
 
   const fetchOrders = async () => {
@@ -87,7 +90,9 @@ const AdminDashboard = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      if (error.response?.status === 401) handleLogout();
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
       toast.error('Gagal memuat pesanan');
       setLoading(false);
     }
@@ -112,41 +117,18 @@ const AdminDashboard = () => {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-    // Prevent multiple simultaneous updates
-    if (updatingStatus[orderId]) {
-      return;
-    }
-
-    setUpdatingStatus((prev) => ({ ...prev, [orderId]: true }));
-
     try {
-      console.log(`Updating order ${orderId} to status: ${newStatus}`);
-
-      const response = await axios.put(`${API}/orders/${orderId}/status`, { status: newStatus }, getAuthHeaders());
-
-      console.log('Status updated successfully:', response.data);
-
-      // Update local state immediately for better UX
-      setOrders((prevOrders) => prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus, updated_at: new Date().toISOString() } : order)));
-
-      toast.success(`Status pesanan diperbarui menjadi: ${statusConfig[newStatus]?.label}`);
-
-      // Refresh data
-      await fetchOrders();
-      await fetchAnalytics();
+      await axios.put(
+        `${API}/orders/${orderId}/status`,
+        { status: newStatus },
+        getAuthHeaders()
+      );
+      toast.success('Status pesanan diperbarui');
+      fetchOrders();
+      fetchAnalytics();
     } catch (error) {
       console.error('Error updating order status:', error);
-
-      if (error.response?.status === 401) {
-        toast.error('Sesi Anda telah berakhir. Silakan login kembali.');
-        handleLogout();
-      } else if (error.response?.status === 404) {
-        toast.error('Pesanan tidak ditemukan');
-      } else {
-        toast.error('Gagal memperbarui status pesanan: ' + (error.response?.data?.detail || error.message));
-      }
-    } finally {
-      setUpdatingStatus((prev) => ({ ...prev, [orderId]: false }));
+      toast.error('Gagal memperbarui status pesanan');
     }
   };
 
@@ -157,7 +139,9 @@ const AdminDashboard = () => {
     navigate('/admin/login');
   };
 
-  const activeOrders = orders.filter((o) => ['pending', 'accepted', 'processing'].includes(o.status));
+  const activeOrders = orders.filter(
+    (order) => ['pending', 'accepted', 'processing'].includes(order.status)
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
@@ -173,11 +157,21 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button onClick={() => navigate('/admin/menu')} variant="outline" className="border-amber-300 hover:bg-amber-50">
+              <Button
+                data-testid="manage-menu-btn"
+                onClick={() => navigate('/admin/menu')}
+                variant="outline"
+                className="border-amber-300 hover:bg-amber-50"
+              >
                 <MenuIcon className="w-4 h-4 mr-2" />
                 Kelola Menu
               </Button>
-              <Button onClick={handleLogout} variant="outline" className="border-red-300 hover:bg-red-50 text-red-600">
+              <Button
+                data-testid="admin-logout-btn"
+                onClick={handleLogout}
+                variant="outline"
+                className="border-red-300 hover:bg-red-50 text-red-600"
+              >
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
@@ -194,7 +188,9 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Pesanan Hari Ini</p>
-                  <p className="text-3xl font-bold text-amber-700">{analytics.total_orders}</p>
+                  <p data-testid="total-orders-today" className="text-3xl font-bold text-amber-700">
+                    {analytics.total_orders}
+                  </p>
                 </div>
                 <div className="p-4 bg-amber-100 rounded-full">
                   <ShoppingBag className="w-8 h-8 text-amber-700" />
@@ -208,10 +204,12 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Pendapatan Hari Ini</p>
-                  <p className="text-3xl font-bold text-green-700">{formatRupiah(analytics.total_revenue)}</p>
+                  <p data-testid="total-revenue-today" className="text-3xl font-bold text-green-700">
+                    Rp {analytics.total_revenue.toLocaleString('id-ID')}
+                  </p>
                 </div>
                 <div className="p-4 bg-green-100 rounded-full">
-                  <span className="w-8 h-8 flex items-center justify-center font-bold text-green-700 text-lg">Rp</span>
+                  <DollarSign className="w-8 h-8 text-green-700" />
                 </div>
               </div>
             </CardContent>
@@ -222,7 +220,9 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Pesanan Aktif</p>
-                  <p className="text-3xl font-bold text-blue-700">{activeOrders.length}</p>
+                  <p data-testid="active-orders-count" className="text-3xl font-bold text-blue-700">
+                    {activeOrders.length}
+                  </p>
                 </div>
                 <div className="p-4 bg-blue-100 rounded-full">
                   <TrendingUp className="w-8 h-8 text-blue-700" />
@@ -271,7 +271,11 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody>
                     {orders.map((order) => (
-                      <tr key={order.id} className="border-b border-gray-200 hover:bg-amber-50">
+                      <tr
+                        key={order.id}
+                        data-testid={`admin-order-${order.id}`}
+                        className="border-b border-gray-200 hover:bg-amber-50"
+                      >
                         <td className="py-4 px-4">
                           <span className="font-mono text-sm">{order.id.substring(0, 8)}</span>
                         </td>
@@ -286,14 +290,22 @@ const AdminDashboard = () => {
                             ))}
                           </div>
                         </td>
-                        <td className="py-4 px-4 font-bold text-amber-700">{formatRupiah(order.total)}</td>
-                        <td className="py-4 px-4">
-                          <Badge className={`${statusConfig[order.status]?.color} border`}>{statusConfig[order.status]?.label}</Badge>
+                        <td className="py-4 px-4 font-bold text-amber-700">
+                          Rp {order.total.toLocaleString('id-ID')}
                         </td>
                         <td className="py-4 px-4">
-                          <Select value={order.status} onValueChange={(value) => updateOrderStatus(order.id, value)} disabled={updatingStatus[order.id]}>
+                          <Badge className={`${statusConfig[order.status]?.color} border`}>
+                            {statusConfig[order.status]?.label}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-4">
+                          <Select
+                            data-testid={`status-select-${order.id}`}
+                            value={order.status}
+                            onValueChange={(value) => updateOrderStatus(order.id, value)}
+                          >
                             <SelectTrigger className="w-40">
-                              <SelectValue>{updatingStatus[order.id] ? 'Memperbarui...' : statusConfig[order.status]?.label}</SelectValue>
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="pending">Menunggu</SelectItem>
