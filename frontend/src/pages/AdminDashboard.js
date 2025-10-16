@@ -38,7 +38,7 @@ const AdminDashboard = () => {
   const [socket, setSocket] = useState(null); // State untuk menyimpan koneksi socket.io
   const [qrCode, setQrCode] = useState(''); // State untuk menyimpan URL gambar QR code
 
-  // 🔁 useEffect dijalankan sekali ketika komponen pertama kali dimuat
+  // useEffect dijalankan sekali ketika komponen pertama kali dimuat
   useEffect(() => {
     // 🔒 Cek token admin di localStorage
     const token = localStorage.getItem('admin_token');
@@ -52,7 +52,7 @@ const AdminDashboard = () => {
     fetchAnalytics();
     fetchQRCode();
 
-    // 🌐 Hubungkan ke Socket.IO server untuk real-time update
+    // Hubungkan ke Socket.IO server untuk real-time update
     const newSocket = io(BACKEND_URL, {
       transports: ['websocket', 'polling'],
     });
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
     };
   }, [navigate]); // Dependensi: hanya `Maps` agar tidak re-run berlebihan
 
-  // 🔐 Fungsi untuk mendapatkan header Authorization (Bearer Token)
+  // Fungsi untuk mendapatkan header Authorization (Bearer Token)
   const getAuthHeaders = () => {
     const token = localStorage.getItem('admin_token');
     return {
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
     };
   };
 
-  // 🧾 Ambil daftar pesanan dari API
+  // Ambil daftar pesanan dari API
   const fetchOrders = async () => {
     try {
       const response = await axios.get(`${API}/orders`, getAuthHeaders());
@@ -117,7 +117,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // 📊 Ambil data analitik harian (total pesanan & total pendapatan)
+  // Ambil data analitik harian (total pesanan & total pendapatan)
   const fetchAnalytics = async () => {
     try {
       const response = await axios.get(`${API}/analytics/daily`, getAuthHeaders());
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // 📱 Ambil QR code untuk pelanggan mengakses menu
+  // Ambil QR code untuk pelanggan mengakses menu
   const fetchQRCode = async () => {
     try {
       const response = await axios.get(`${API}/qrcode`, getAuthHeaders());
@@ -137,7 +137,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // 🔄 Ubah status pesanan
+  // Ubah status pesanan
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await axios.put(
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // 🚪 Logout admin
+  // Logout admin
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_username');
@@ -167,10 +167,10 @@ const AdminDashboard = () => {
     (order) => ['pending', 'accepted', 'processing'].includes(order.status)
   );
 
-  // 🖼️ Struktur Tampilan Dashboard
+  // Struktur Tampilan Dashboard
   return ( 
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
-      {/* 🧭 Header Navbar */} 
+      {/* Header Navbar */} 
       <div className="bg-white border-b shadow-sm"> 
         <div className="max-w-7xl mx-auto px-4 py-4"> 
           <div className="flex items-center justify-between">
@@ -208,7 +208,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* 📊 Isi Halaman Dashboard */}
+      {/* Isi Halaman Dashboard */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Kartu Analitik */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -267,7 +267,7 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* 🧾 Tampilkan QR Code Menu */}
+        {/* Tampilkan QR Code Menu */}
         {qrCode && ( // Tampilkan hanya jika qrCode sudah dimuat
           <Card className="mb-8 shadow-lg">
             <CardHeader className="bg-gradient-to-r from-amber-100 to-orange-100 border-b">
@@ -281,7 +281,7 @@ const AdminDashboard = () => {
           </Card>
         )}
 
-        {/* 📋 Tabel Pesanan Real-time */}
+        {/* Tabel Pesanan Real-time */}
         <Card className="shadow-lg">
           <CardHeader className="bg-gradient-to-r from-amber-100 to-orange-100 border-b">
             <CardTitle className="text-amber-900">Pesanan Real-time</CardTitle>
