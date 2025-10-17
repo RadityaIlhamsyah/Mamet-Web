@@ -40,7 +40,7 @@ const AdminDashboard = () => {
 
   // useEffect dijalankan sekali ketika komponen pertama kali dimuat
   useEffect(() => {
-    // 🔒 Cek token admin di localStorage
+    // Cek token admin di localStorage
     const token = localStorage.getItem('admin_token');
     if (!token) {
       navigate('/admin/login'); // Jika belum login, arahkan ke halaman login
